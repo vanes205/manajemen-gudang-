@@ -6,8 +6,8 @@ import pandas as pd
 # PAGE CONFIG
 # =========================
 st.set_page_config(
-    page_title="Gudang Kiyowo",
-    page_icon="🎀",
+    page_title="Sistem Manajemen Gudang",
+    page_icon="📦",
     layout="wide"
 )
 
@@ -17,27 +17,33 @@ st.set_page_config(
 st.markdown("""
 <style>
 
+/* BACKGROUND */
 .stApp {
     background: linear-gradient(
         135deg,
-        #ffd6e8,
-        #ffcce1,
-        #ffe5f1
+        #f8d7ff,
+        #dbe8ff,
+        #ffe3f1
     );
 }
 
 /* TITLE */
 h1, h2, h3 {
-    color: #ff4f81 !important;
+    color: #ff5f9e !important;
     font-weight: bold;
+}
+
+/* TEXT */
+p, label, div {
+    color: #4b4b4b;
 }
 
 /* SIDEBAR */
 section[data-testid="stSidebar"] {
     background: linear-gradient(
         180deg,
-        #ffb6d9,
-        #ffcce6
+        #f7c8e9,
+        #cde4ff
     );
 }
 
@@ -50,26 +56,27 @@ section[data-testid="stSidebar"] {
     font-weight: bold;
     background: linear-gradient(
         90deg,
-        #ff7eb3,
-        #ff758c
+        #ff8eb5,
+        #8fc7ff
     );
     color: white;
     transition: 0.3s;
-    box-shadow: 0 4px 10px rgba(255, 105, 180, 0.3);
+    box-shadow: 0 4px 12px rgba(255, 182, 193, 0.4);
 }
 
 .stButton > button:hover {
     transform: scale(1.03);
     background: linear-gradient(
         90deg,
-        #ff5f95,
-        #ff9cc2
+        #ff75a6,
+        #73b8ff
     );
 }
 
-/* INPUT BOX */
+/* INPUT */
 input, textarea {
     border-radius: 12px !important;
+    border: 1px solid #ffd3ea !important;
 }
 
 /* METRIC */
@@ -77,16 +84,22 @@ div[data-testid="stMetric"] {
     background: rgba(255,255,255,0.4);
     padding: 20px;
     border-radius: 18px;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
 }
 
-/* TABLE */
+/* DATAFRAME */
 div[data-testid="stDataFrame"] {
-    background: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.35);
+    border-radius: 15px;
     padding: 10px;
+}
+
+/* ALERT */
+.stAlert {
     border-radius: 15px;
 }
 
+/* CONTAINER */
 .block-container {
     padding-top: 2rem;
 }
@@ -231,7 +244,7 @@ class DoublyLinkedList:
 
         return False
 
-    # TAMPILKAN SEMUA BARANG
+    # TAMPILKAN BARANG
     def tampil_barang(self):
 
         data = []
@@ -279,14 +292,14 @@ gudang = st.session_state.gudang
 # =========================
 # TITLE
 # =========================
-st.title("🎀 Sistem Manajemen Gudang Kiyowo")
+st.title("📦 Sistem Manajemen Gudang")
 st.caption("Manajemen stok barang menggunakan Doubly Linked List")
 
 # =========================
 # SIDEBAR MENU
 # =========================
 menu = st.sidebar.selectbox(
-    "📋 MENU",
+    "📋 MENU UTAMA",
     [
         "➕ Tambah Barang",
         "📥 Barang Masuk",
@@ -322,7 +335,7 @@ if menu == "➕ Tambah Barang":
             value=date.today()
         )
 
-    if st.button("➕ Tambah"):
+    if st.button("➕ Tambah Barang"):
 
         if nama.strip() == "" or kode.strip() == "":
             st.warning("⚠️ Input tidak boleh kosong!")
@@ -427,7 +440,7 @@ elif menu == "🔍 Cari Barang":
 
             st.write("📦 Nama Barang :", barang.nama)
             st.write("🏷️ Kode Barang :", barang.kode)
-            st.write("📊 Stok :", barang.stok)
+            st.write("📊 Stok Barang :", barang.stok)
             st.write("📅 Tanggal Masuk :", barang.tanggal_masuk)
 
         else:
@@ -447,7 +460,7 @@ elif menu == "✏️ Update Stok":
         min_value=0
     )
 
-    if st.button("✏️ Update"):
+    if st.button("✏️ Update Stok"):
 
         if gudang.update_stok(nama, stok_baru):
             st.success("✅ Stok berhasil diupdate!")
@@ -456,7 +469,7 @@ elif menu == "✏️ Update Stok":
             st.error("❌ Barang tidak ditemukan!")
 
 # =========================
-# TAMPILKAN BARANG
+# SEMUA BARANG
 # =========================
 elif menu == "📦 Semua Barang":
 

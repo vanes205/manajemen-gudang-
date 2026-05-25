@@ -3,7 +3,7 @@ import streamlit as st
 # ====================
 # CONFIG PAGE
 # ====================
-st.set_page_config(
+st.set_page_config
     page_title="Sistem Gudang",
     page_icon="📦",
     layout="wide"

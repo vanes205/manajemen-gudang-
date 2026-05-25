@@ -1,70 +1,68 @@
-# Streamlit Sistem Manajemen Gudang (Versi Dibenerin + Gradient UI)
 import streamlit as st
+from datetime import date
+import pandas as pd
 
-# ====================
-# CONFIG PAGE
-# ====================
+# =========================
+# PAGE CONFIG
+# =========================
 st.set_page_config(
     page_title="Sistem Gudang",
     page_icon="📦",
     layout="wide"
 )
 
-# ====================
+# =========================
 # CUSTOM CSS
-# ====================
-st.markdown(
-    """
-    <style>
+# =========================
+st.markdown("""
+<style>
 
-    .stApp {
-        background: linear-gradient(135deg, #1e3c72, #2a5298, #6dd5ed);
-        color: white;
-    }
+.stApp {
+    background: linear-gradient(135deg, #1e3c72, #2a5298, #6dd5ed);
+    color: white;
+}
 
-    h1, h2, h3 {
-        color: white !important;
-    }
+h1, h2, h3 {
+    color: white !important;
+}
 
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #141e30, #243b55);
-    }
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #141e30, #243b55);
+}
 
-    .stButton>button {
-        width: 100%;
-        border-radius: 12px;
-        border: none;
-        padding: 12px;
-        font-weight: bold;
-        background: linear-gradient(90deg, #00c6ff, #0072ff);
-        color: white;
-        transition: 0.3s;
-    }
+.stButton>button {
+    width: 100%;
+    border-radius: 12px;
+    border: none;
+    padding: 12px;
+    font-weight: bold;
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    color: white;
+    transition: 0.3s;
+}
 
-    .stButton>button:hover {
-        transform: scale(1.03);
-        background: linear-gradient(90deg, #43cea2, #185a9d);
-    }
+.stButton>button:hover {
+    transform: scale(1.03);
+    background: linear-gradient(90deg, #43cea2, #185a9d);
+}
 
-    div[data-testid="stMetric"] {
-        background: rgba(255,255,255,0.1);
-        padding: 20px;
-        border-radius: 15px;
-        backdrop-filter: blur(10px);
-    }
+div[data-testid="stMetric"] {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
 
-    .block-container {
-        padding-top: 2rem;
-    }
+.block-container {
+    padding-top: 2rem;
+}
 
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+</style>
+""", unsafe_allow_html=True)
 
-# ====================
+# =========================
 # CLASS NODE
-# ====================
+# =========================
 class Node:
     def __init__(self, nama, kode, stok, tanggal_masuk):
         self.nama = nama
@@ -74,9 +72,9 @@ class Node:
         self.prev = None
         self.next = None
 
-# ====================
+# =========================
 # CLASS DLL
-# ====================
+# =========================
 class DoublyLinkedList:
     def __init__(self):
         self.head = None
@@ -114,6 +112,7 @@ class DoublyLinkedList:
         current = self.head
 
         while current:
+
             if current.nama.lower() == nama.lower():
                 return current
 
@@ -230,23 +229,23 @@ class DoublyLinkedList:
 
         return jumlah_jenis, total_stok
 
-# ====================
+# =========================
 # SESSION STATE
-# ====================
+# =========================
 if "gudang" not in st.session_state:
     st.session_state.gudang = DoublyLinkedList()
 
 gudang = st.session_state.gudang
 
-# ====================
+# =========================
 # TITLE
-# ====================
+# =========================
 st.title("📦 Sistem Manajemen Gudang")
-st.caption("Kelola stok barang dengan sistem Doubly Linked List")
+st.caption("Sistem Gudang Menggunakan Doubly Linked List")
 
-# ====================
-# MENU
-# ====================
+# =========================
+# SIDEBAR MENU
+# =========================
 menu = st.sidebar.selectbox(
     "📋 MENU UTAMA",
     [
@@ -256,13 +255,13 @@ menu = st.sidebar.selectbox(
         "🔍 Cari Barang",
         "✏️ Update Stok Barang",
         "📦 Tampilkan Semua Barang",
-        "📊 Lihat Jumlah Barang"
+        "📊 Statistik Gudang"
     ]
 )
 
-# ====================
+# =========================
 # TAMBAH BARANG
-# ====================
+# =========================
 if menu == "➕ Tambah Barang":
 
     st.header("➕ Tambah Barang Baru")
@@ -275,26 +274,34 @@ if menu == "➕ Tambah Barang":
 
     with col2:
         stok = st.number_input("📦 Jumlah Stok", min_value=1)
-        tanggal = st.text_input("📅 Tanggal Masuk")
+        tanggal = st.date_input(
+            "📅 Tanggal Masuk",
+            value=date.today()
+        )
 
     if st.button("➕ Tambah Barang"):
 
-        hasil = gudang.tambah_barang(
-            nama,
-            kode,
-            stok,
-            tanggal
-        )
-
-        if hasil:
-            st.success("✅ Barang berhasil ditambahkan!")
+        if nama.strip() == "" or kode.strip() == "":
+            st.warning("⚠️ Input tidak boleh kosong!")
 
         else:
-            st.warning("⚠️ Barang sudah ada!")
 
-# ====================
+            hasil = gudang.tambah_barang(
+                nama,
+                kode,
+                stok,
+                tanggal.strftime("%d-%m-%Y")
+            )
+
+            if hasil:
+                st.success("✅ Barang berhasil ditambahkan!")
+
+            else:
+                st.warning("⚠️ Barang sudah ada!")
+
+# =========================
 # BARANG MASUK
-# ====================
+# =========================
 elif menu == "📥 Barang Masuk":
 
     st.header("📥 Barang Masuk")
@@ -310,16 +317,24 @@ elif menu == "📥 Barang Masuk":
         else:
             st.error("❌ Barang tidak ditemukan!")
 
-# ====================
+# =========================
 # BARANG KELUAR
-# ====================
+# =========================
 elif menu == "📤 Barang Keluar":
 
     st.header("📤 Barang Keluar")
 
     nama = st.text_input("📝 Nama Barang")
-    jumlah = st.number_input("📦 Jumlah Keluar", min_value=1)
-    tanggal_keluar = st.text_input("📅 Tanggal Keluar")
+
+    jumlah = st.number_input(
+        "📦 Jumlah Keluar",
+        min_value=1
+    )
+
+    tanggal_keluar = st.date_input(
+        "📅 Tanggal Keluar",
+        value=date.today()
+    )
 
     if st.button("📤 Kurangi Stok"):
 
@@ -327,7 +342,10 @@ elif menu == "📤 Barang Keluar":
 
         if hasil == "berhasil":
             st.success("✅ Barang berhasil dikeluarkan!")
-            st.info(f"📅 Tanggal Keluar : {tanggal_keluar}")
+            st.info(
+                f"📅 Tanggal Keluar : "
+                f"{tanggal_keluar.strftime('%d-%m-%Y')}"
+            )
 
         elif hasil == "habis":
             st.warning("⚠️ Stok habis! Barang dihapus.")
@@ -338,9 +356,9 @@ elif menu == "📤 Barang Keluar":
         else:
             st.error("❌ Barang tidak ditemukan!")
 
-# ====================
+# =========================
 # CARI BARANG
-# ====================
+# =========================
 elif menu == "🔍 Cari Barang":
 
     st.header("🔍 Cari Barang")
@@ -363,15 +381,19 @@ elif menu == "🔍 Cari Barang":
         else:
             st.error("❌ Barang tidak ditemukan!")
 
-# ====================
+# =========================
 # UPDATE STOK
-# ====================
+# =========================
 elif menu == "✏️ Update Stok Barang":
 
     st.header("✏️ Update Stok Barang")
 
     nama = st.text_input("📝 Nama Barang")
-    stok_baru = st.number_input("📦 Stok Baru", min_value=0)
+
+    stok_baru = st.number_input(
+        "📦 Stok Baru",
+        min_value=0
+    )
 
     if st.button("✏️ Update"):
 
@@ -381,9 +403,9 @@ elif menu == "✏️ Update Stok Barang":
         else:
             st.error("❌ Barang tidak ditemukan!")
 
-# ====================
+# =========================
 # TAMPILKAN BARANG
-# ====================
+# =========================
 elif menu == "📦 Tampilkan Semua Barang":
 
     st.header("📦 Daftar Semua Barang")
@@ -391,15 +413,21 @@ elif menu == "📦 Tampilkan Semua Barang":
     data = gudang.tampil_barang()
 
     if data:
-        st.table(data)
+
+        df = pd.DataFrame(data)
+
+        st.dataframe(
+            df,
+            use_container_width=True
+        )
 
     else:
         st.info("📭 Belum ada data barang.")
 
-# ====================
+# =========================
 # STATISTIK
-# ====================
-elif menu == "📊 Lihat Jumlah Barang":
+# =========================
+elif menu == "📊 Statistik Gudang":
 
     st.header("📊 Statistik Gudang")
 
@@ -408,14 +436,20 @@ elif menu == "📊 Lihat Jumlah Barang":
     col1, col2 = st.columns(2)
 
     with col1:
-        st.metric("📦 Jumlah Jenis Barang", jenis)
+        st.metric(
+            "📦 Jumlah Jenis Barang",
+            jenis
+        )
 
     with col2:
-        st.metric("📊 Total Seluruh Stok", total)
+        st.metric(
+            "📊 Total Seluruh Stok",
+            total
+        )
 
-# ====================
+# =========================
 # RESET BUTTON
-# ====================
+# =========================
 st.divider()
 
 if st.button("🔄 Reset Sistem / Mulai dari Awal"):

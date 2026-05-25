@@ -1,127 +1,424 @@
+# Streamlit Sistem Manajemen Gudang (Versi Dibenerin + Gradient UI)
 import streamlit as st
 
-#====================
-#KELAS NODE KATEGORI
-#====================
+# ====================
+# CONFIG PAGE
+# ====================
+st.set_page_config(
+    page_title="Sistem Gudang",
+    page_icon="📦",
+    layout="wide"
+)
 
+# ====================
+# CUSTOM CSS
+# ====================
+st.markdown(
+    """
+    <style>
 
-class KategoriNode:
+    .stApp {
+        background: linear-gradient(135deg, #1e3c72, #2a5298, #6dd5ed);
+        color: white;
+    }
 
-    def __init__(self, nama_kategori):
-        self.nama = nama_kategori
-        self.sub_kategori = [] # Ini adalah kategori 'anak' atau cabang dari kategori
-        
-    def tambah_sub(self, node_kategori):
-        self.sub_kategori.append(node_kategori)
-        return node_kategori # Mengembalikan node agar mudah disambung (chaining)
-    
-    def dapatkan_tree_string(self, level=0):
-        #Mengatur spasi agar terlihat bertingkat
-        indentasi = "   " * level
-        simbol = "⤷ " if level > 0 else "🛒 "
-        
-        print(f"{indentasi}{simbol}{self.nama}")
-        
-        for sub in self.sub_kategori:
-            hasil += sub.dapatkan_tree_string(level + 1)
-        return hasil
+    h1, h2, h3 {
+        color: white !important;
+    }
 
-    def cari_node (self, target_nama):
-    #Mencari node spesifik untuk menambahkan anak dibawahnya
-        if self.nama.lower() == target_nama.lower():
-            return self
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #141e30, #243b55);
+    }
 
-        for sub in self.sub_kategori:
-            hasil = sub.cari_node(target_nama)
-            if hasil:
-                return hasil
+    .stButton>button {
+        width: 100%;
+        border-radius: 12px;
+        border: none;
+        padding: 12px;
+        font-weight: bold;
+        background: linear-gradient(90deg, #00c6ff, #0072ff);
+        color: white;
+        transition: 0.3s;
+    }
+
+    .stButton>button:hover {
+        transform: scale(1.03);
+        background: linear-gradient(90deg, #43cea2, #185a9d);
+    }
+
+    div[data-testid="stMetric"] {
+        background: rgba(255,255,255,0.1);
+        padding: 20px;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+    }
+
+    .block-container {
+        padding-top: 2rem;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# ====================
+# CLASS NODE
+# ====================
+class Node:
+    def __init__(self, nama, kode, stok, tanggal_masuk):
+        self.nama = nama
+        self.kode = kode
+        self.stok = stok
+        self.tanggal_masuk = tanggal_masuk
+        self.prev = None
+        self.next = None
+
+# ====================
+# CLASS DLL
+# ====================
+class DoublyLinkedList:
+    def __init__(self):
+        self.head = None
+
+    # TAMBAH BARANG
+    def tambah_barang(self, nama, kode, stok, tanggal):
+
+        current = self.head
+
+        while current:
+            if current.nama.lower() == nama.lower():
+                return False
+
+            current = current.next
+
+        new_node = Node(nama, kode, stok, tanggal)
+
+        if self.head is None:
+            self.head = new_node
+            return True
+
+        current = self.head
+
+        while current.next:
+            current = current.next
+
+        current.next = new_node
+        new_node.prev = current
+
+        return True
+
+    # CARI BARANG
+    def cari_barang(self, nama):
+
+        current = self.head
+
+        while current:
+            if current.nama.lower() == nama.lower():
+                return current
+
+            current = current.next
+
         return None
 
-    def cari_jalur(self, target, path=""):
-    #Mencari jalur lengkap (breadcrumb seperti studi kasus sebelumnya)
-        jalur_saat_ini = path + " > " + self.nama if path else self.nama
-        
-        if self.nama.lower() == target.lower():
-            return jalur_saat_ini
-        
-        for sub in self.sub_kategori:
-            hasil = sub.cari_jalur(target, jalur_saat_ini)
-            if hasil:
-                return hasil  
-        return None
-# ===================================
-#PROGRAM UTAMA (STREAMLIT UI)
-# ===================================
-st.set_page_config(page_title="Struktur Kategori", page_icon="+")
+    # BARANG MASUK
+    def barang_masuk(self, nama, jumlah):
 
-st.title("Pembuat Struktur Kategori")
-st.title("Aplikasi interaktif untuk mensimulasikan struktur data Tree.")
+        barang = self.cari_barang(nama)
 
-# Inisialisasi session state untuk menyimpan struktur Tree agar tidak hilang saat halaman di refresh
-if 'root' not in st.session_state:
-    st.session_state.root = None
+        if barang:
+            barang.stok += jumlah
+            return True
 
-# Jika Root belim dibuat, tampilkan form pembuatan Root
-if st.session_state.root is None:
-    st.info("Sistem belum memiliki kategori utama. Silahkan Buat Terlebih dahulu.")
-    nama_root = st.text_input("Masukkan nama kategori utama (Root) : ",
-    value="Toko Saya")
-    
-    if st.button("Buat Kategori Utama", type="primary"):
-        st.session_state.root = KategoriNode(nama_root)
-        st.rerun() # Refresh Halaman
-        
-# Jika Root sudah ada, tampilkan menu utama menggunakan tabs
-else:
-    root = st.session_state.root
-    
-    # Mengganti menu CLI dengan sistem tab yang lebih modern
-    tab1, tab2, tab3, = st.tabs(["Lihat Struktur", "+ Tambah Sub-kategori", "Cari Jalur"])
-    
-    # TAB 1 : Lihat struktur 
-    with tab1:
-        st.subheader("Struktur Kategori Saat Ini")
-        tree_teks = root.dapatkan_tree_string()
-        # Menggunakan st.cosde agar format indentasi (spasi) tetap rapi
-        st.code(tree_teks, language="text")
-        
-    # TAB 2 : Tambah Sub-Kategori
-    with tab2:
-        st.subheader("Tambah Cabang Baru")
-        induk_nama = st.text_input("Nama kategori induk tempat cabang ditambahkan:")
-        anak_nama = st.text_input("Nama sub-kategori baru: ")
-        
-        if st.button("Tambah Kategori"):
-            if induk_nama and anak_nama:
-                induk_node = root.cari_node(induk_nama)
-                if induk_node:
-                    induk_node.tambah_sub(KategoriNode(anak_nama))
-                    st.success(f"Berhasil menambahkan '{anak_nama}' di bawah '{induk_node.nama}'!")
+        return False
+
+    # BARANG KELUAR
+    def barang_keluar(self, nama, jumlah):
+
+        barang = self.cari_barang(nama)
+
+        if barang:
+
+            if jumlah > barang.stok:
+                return "stok_kurang"
+
+            barang.stok -= jumlah
+
+            if barang.stok == 0:
+                self.hapus_barang(nama)
+                return "habis"
+
+            return "berhasil"
+
+        return "tidak_ada"
+
+    # HAPUS BARANG
+    def hapus_barang(self, nama):
+
+        current = self.head
+
+        while current:
+
+            if current.nama.lower() == nama.lower():
+
+                if current == self.head:
+
+                    self.head = current.next
+
+                    if self.head:
+                        self.head.prev = None
+
                 else:
-                    st.error(f"Kategori '{induk_nama}' tidak ditemukan! Pastikan ejaannya benar.") 
-            else:
-                st.warning("Harap isi kedua kolom diatas.")
-    
-    # TAB 3 : Cari Jalur
-    with tab3:
-        st.subheader("Pencarian Breadcrumb")
-        target_cari = st.text_input("Nama kategori yang ingin dicari jalurnya :")
-        
-        if st.button("Cari jalur"):
-            if target_cari:
-                hasil = root.cari_jalur(target_cari)
-                if hasil:
-                    st.success("Ditemukan!")
-                    st.info(f" Jalur: {hasil}")
-                else:
-                    st.error(f"Kategori '{target_cari}' tidak ditemukan dalam sistem.")
-            else:
-                st.warning("Harap isi nama kategori yang ingin dicari.")
-    
-    # Tombol Reset 
-    st.divider()
-    if st.button("Reset Sistem / Mulai dari Awal"):
-        st.session_state.root = None
-        st.rerun()
-        
-        
+
+                    if current.prev:
+                        current.prev.next = current.next
+
+                    if current.next:
+                        current.next.prev = current.prev
+
+                return True
+
+            current = current.next
+
+        return False
+
+    # UPDATE STOK
+    def update_stok(self, nama, stok_baru):
+
+        barang = self.cari_barang(nama)
+
+        if barang:
+            barang.stok = stok_baru
+            return True
+
+        return False
+
+    # TAMPILKAN BARANG
+    def tampil_barang(self):
+
+        data = []
+
+        current = self.head
+
+        while current:
+
+            data.append({
+                "Nama Barang": current.nama,
+                "Kode Barang": current.kode,
+                "Stok": current.stok,
+                "Tanggal Masuk": current.tanggal_masuk
+            })
+
+            current = current.next
+
+        return data
+
+    # JUMLAH BARANG
+    def jumlah_barang(self):
+
+        current = self.head
+
+        jumlah_jenis = 0
+        total_stok = 0
+
+        while current:
+
+            jumlah_jenis += 1
+            total_stok += current.stok
+
+            current = current.next
+
+        return jumlah_jenis, total_stok
+
+# ====================
+# SESSION STATE
+# ====================
+if "gudang" not in st.session_state:
+    st.session_state.gudang = DoublyLinkedList()
+
+gudang = st.session_state.gudang
+
+# ====================
+# TITLE
+# ====================
+st.title("📦 Sistem Manajemen Gudang")
+st.caption("Kelola stok barang dengan sistem Doubly Linked List")
+
+# ====================
+# MENU
+# ====================
+menu = st.sidebar.selectbox(
+    "📋 MENU UTAMA",
+    [
+        "➕ Tambah Barang",
+        "📥 Barang Masuk",
+        "📤 Barang Keluar",
+        "🔍 Cari Barang",
+        "✏️ Update Stok Barang",
+        "📦 Tampilkan Semua Barang",
+        "📊 Lihat Jumlah Barang"
+    ]
+)
+
+# ====================
+# TAMBAH BARANG
+# ====================
+if menu == "➕ Tambah Barang":
+
+    st.header("➕ Tambah Barang Baru")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        nama = st.text_input("📝 Nama Barang")
+        kode = st.text_input("🏷️ Kode Barang")
+
+    with col2:
+        stok = st.number_input("📦 Jumlah Stok", min_value=1)
+        tanggal = st.text_input("📅 Tanggal Masuk")
+
+    if st.button("➕ Tambah Barang"):
+
+        hasil = gudang.tambah_barang(
+            nama,
+            kode,
+            stok,
+            tanggal
+        )
+
+        if hasil:
+            st.success("✅ Barang berhasil ditambahkan!")
+
+        else:
+            st.warning("⚠️ Barang sudah ada!")
+
+# ====================
+# BARANG MASUK
+# ====================
+elif menu == "📥 Barang Masuk":
+
+    st.header("📥 Barang Masuk")
+
+    nama = st.text_input("📝 Nama Barang")
+    jumlah = st.number_input("📦 Jumlah Tambahan", min_value=1)
+
+    if st.button("📥 Tambah Stok"):
+
+        if gudang.barang_masuk(nama, jumlah):
+            st.success("✅ Stok berhasil ditambahkan!")
+
+        else:
+            st.error("❌ Barang tidak ditemukan!")
+
+# ====================
+# BARANG KELUAR
+# ====================
+elif menu == "📤 Barang Keluar":
+
+    st.header("📤 Barang Keluar")
+
+    nama = st.text_input("📝 Nama Barang")
+    jumlah = st.number_input("📦 Jumlah Keluar", min_value=1)
+    tanggal_keluar = st.text_input("📅 Tanggal Keluar")
+
+    if st.button("📤 Kurangi Stok"):
+
+        hasil = gudang.barang_keluar(nama, jumlah)
+
+        if hasil == "berhasil":
+            st.success("✅ Barang berhasil dikeluarkan!")
+            st.info(f"📅 Tanggal Keluar : {tanggal_keluar}")
+
+        elif hasil == "habis":
+            st.warning("⚠️ Stok habis! Barang dihapus.")
+
+        elif hasil == "stok_kurang":
+            st.error("❌ Stok tidak mencukupi!")
+
+        else:
+            st.error("❌ Barang tidak ditemukan!")
+
+# ====================
+# CARI BARANG
+# ====================
+elif menu == "🔍 Cari Barang":
+
+    st.header("🔍 Cari Barang")
+
+    cari = st.text_input("📝 Nama Barang")
+
+    if st.button("🔍 Cari"):
+
+        barang = gudang.cari_barang(cari)
+
+        if barang:
+
+            st.success("✅ Barang ditemukan!")
+
+            st.write("📦 Nama Barang :", barang.nama)
+            st.write("🏷️ Kode Barang :", barang.kode)
+            st.write("📊 Stok Barang :", barang.stok)
+            st.write("📅 Tanggal Masuk :", barang.tanggal_masuk)
+
+        else:
+            st.error("❌ Barang tidak ditemukan!")
+
+# ====================
+# UPDATE STOK
+# ====================
+elif menu == "✏️ Update Stok Barang":
+
+    st.header("✏️ Update Stok Barang")
+
+    nama = st.text_input("📝 Nama Barang")
+    stok_baru = st.number_input("📦 Stok Baru", min_value=0)
+
+    if st.button("✏️ Update"):
+
+        if gudang.update_stok(nama, stok_baru):
+            st.success("✅ Stok berhasil diupdate!")
+
+        else:
+            st.error("❌ Barang tidak ditemukan!")
+
+# ====================
+# TAMPILKAN BARANG
+# ====================
+elif menu == "📦 Tampilkan Semua Barang":
+
+    st.header("📦 Daftar Semua Barang")
+
+    data = gudang.tampil_barang()
+
+    if data:
+        st.table(data)
+
+    else:
+        st.info("📭 Belum ada data barang.")
+
+# ====================
+# STATISTIK
+# ====================
+elif menu == "📊 Lihat Jumlah Barang":
+
+    st.header("📊 Statistik Gudang")
+
+    jenis, total = gudang.jumlah_barang()
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric("📦 Jumlah Jenis Barang", jenis)
+
+    with col2:
+        st.metric("📊 Total Seluruh Stok", total)
+
+# ====================
+# RESET BUTTON
+# ====================
+st.divider()
+
+if st.button("🔄 Reset Sistem / Mulai dari Awal"):
+    st.session_state.gudang = DoublyLinkedList()
+    st.success("✅ Sistem berhasil direset!")
+    st.rerun()

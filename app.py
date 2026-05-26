@@ -1,3 +1,4 @@
+```python
 import streamlit as st
 from datetime import date
 
@@ -32,11 +33,6 @@ h1, h2, h3 {
     font-weight: bold;
 }
 
-/* TEXT */
-p, label, div {
-    color: #4b4b4b;
-}
-
 /* SIDEBAR */
 section[data-testid="stSidebar"] {
     background: linear-gradient(
@@ -59,23 +55,11 @@ section[data-testid="stSidebar"] {
         #8fc8ff
     );
     color: white;
-    transition: 0.3s;
-    box-shadow: 0 4px 12px rgba(255, 182, 193, 0.4);
-}
-
-.stButton > button:hover {
-    transform: scale(1.03);
-    background: linear-gradient(
-        90deg,
-        #ff74a3,
-        #6db7ff
-    );
 }
 
 /* INPUT */
-input, textarea {
+input {
     border-radius: 12px !important;
-    border: 1px solid #ffd3ea !important;
 }
 
 /* METRIC */
@@ -83,23 +67,6 @@ div[data-testid="stMetric"] {
     background: rgba(255,255,255,0.4);
     padding: 20px;
     border-radius: 18px;
-    backdrop-filter: blur(10px);
-}
-
-/* ALERT */
-.stAlert {
-    border-radius: 15px;
-}
-
-/* TABLE */
-table {
-    background-color: rgba(255,255,255,0.45);
-    border-radius: 10px;
-}
-
-/* CONTAINER */
-.block-container {
-    padding-top: 2rem;
 }
 
 </style>
@@ -109,6 +76,7 @@ table {
 # CLASS NODE
 # =========================
 class Node:
+
     def __init__(
         self,
         nama,
@@ -133,6 +101,7 @@ class Node:
 # CLASS DLL
 # =========================
 class DoublyLinkedList:
+
     def __init__(self):
         self.head = None
 
@@ -278,8 +247,8 @@ class DoublyLinkedList:
                 "Nama Barang": current.nama,
                 "Kode Barang": current.kode,
                 "Stok": current.stok,
-                "Harga Beli": f"Rp {current.harga_beli:,}",
-                "Harga Jual": f"Rp {current.harga_jual:,}",
+                "Harga Beli": f"Rp {current.harga_beli}",
+                "Harga Jual": f"Rp {current.harga_jual}",
                 "Tanggal Masuk": current.tanggal_masuk
             })
 
@@ -322,12 +291,13 @@ gudang = st.session_state.gudang
 # TITLE
 # =========================
 st.title("📦 Sistem Manajemen Gudang")
+st.caption("Menggunakan Doubly Linked List")
 
 # =========================
-# SIDEBAR MENU
+# MENU
 # =========================
 menu = st.sidebar.selectbox(
-    "📋 MENU UTAMA",
+    "📋 MENU",
     [
         "➕ Tambah Barang",
         "📥 Barang Masuk",
@@ -346,38 +316,44 @@ if menu == "➕ Tambah Barang":
 
     st.header("➕ Tambah Barang")
 
-    col1, col2 = st.columns(2)
+    nama = st.text_input("📝 Nama Barang")
+    kode = st.text_input("🏷️ Kode Barang")
 
-    with col1:
-        nama = st.text_input("📝 Nama Barang")
-        kode = st.text_input("🏷️ Kode Barang")
+    stok = st.number_input(
+        "📦 Jumlah Stok",
+        min_value=1
+    )
 
-    with col2:
+    harga_beli = st.text_input(
+        "💰 Harga Beli"
+    )
 
-        stok = st.number_input(
-            "📦 Jumlah Stok",
-            min_value=1
-        )
+    harga_jual = st.text_input(
+        "💸 Harga Jual"
+    )
 
-        harga_beli = st.number_input(
-            "💰 Harga Beli",
-            min_value=0
-        )
-
-        harga_jual = st.number_input(
-            "💸 Harga Jual",
-            min_value=0
-        )
-
-        tanggal = st.date_input(
-            "📅 Tanggal Masuk",
-            value=date.today()
-        )
+    tanggal = st.date_input(
+        "📅 Tanggal Masuk",
+        value=date.today()
+    )
 
     if st.button("➕ Tambah Barang"):
 
-        if nama.strip() == "" or kode.strip() == "":
-            st.warning("⚠️ Input tidak boleh kosong!")
+        if (
+            nama.strip() == ""
+            or kode.strip() == ""
+            or harga_beli.strip() == ""
+            or harga_jual.strip() == ""
+        ):
+
+            st.warning("⚠️ Semua input harus diisi!")
+
+        elif (
+            not harga_beli.isdigit()
+            or not harga_jual.isdigit()
+        ):
+
+            st.error("❌ Harga harus berupa angka!")
 
         else:
 
@@ -385,8 +361,8 @@ if menu == "➕ Tambah Barang":
                 nama,
                 kode,
                 stok,
-                harga_beli,
-                harga_jual,
+                int(harga_beli),
+                int(harga_jual),
                 tanggal.strftime("%d-%m-%Y")
             )
 
@@ -461,11 +437,6 @@ elif menu == "📤 Barang Keluar":
 
             st.success("✅ Barang berhasil dikeluarkan!")
 
-            st.info(
-                f"📅 Tanggal Keluar : "
-                f"{tanggal_keluar.strftime('%d-%m-%Y')}"
-            )
-
         elif hasil == "habis":
             st.warning("⚠️ Stok habis! Barang dihapus.")
 
@@ -494,7 +465,7 @@ elif menu == "🔍 Cari Barang":
 
             st.write("📦 Nama Barang :", barang.nama)
             st.write("🏷️ Kode Barang :", barang.kode)
-            st.write("📊 Stok Barang :", barang.stok)
+            st.write("📊 Stok :", barang.stok)
             st.write("💰 Harga Beli :", barang.harga_beli)
             st.write("💸 Harga Jual :", barang.harga_jual)
             st.write("📅 Tanggal Masuk :", barang.tanggal_masuk)
@@ -516,7 +487,7 @@ elif menu == "✏️ Update Stok":
         min_value=0
     )
 
-    if st.button("✏️ Update Stok"):
+    if st.button("✏️ Update"):
 
         if gudang.update_stok(nama, stok_baru):
             st.success("✅ Stok berhasil diupdate!")
@@ -540,11 +511,11 @@ elif menu == "📦 Semua Barang":
         st.info("📭 Belum ada data barang.")
 
 # =========================
-# STATISTIK
+# STATISTIK & LAPORAN
 # =========================
 elif menu == "📊 Statistik & Laporan":
 
-    st.header("📊 Statistik & Laporan")
+    st.header("📊 Statistik Gudang")
 
     jenis, total = gudang.jumlah_barang()
 
@@ -593,3 +564,4 @@ elif menu == "📊 Statistik & Laporan":
         st.success("✅ Sistem berhasil direset!")
 
         st.rerun()
+```

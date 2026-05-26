@@ -286,11 +286,8 @@ if "laporan_keluar" not in st.session_state:
 
 gudang = st.session_state.gudang
 
-# =========================
 # TITLE
-# =========================
 st.title("📦 Sistem Manajemen Gudang")
-st.caption("Menggunakan Doubly Linked List")
 
 # =========================
 # MENU

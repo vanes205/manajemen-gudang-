@@ -1,6 +1,5 @@
 import streamlit as st
 from datetime import date
-import pandas as pd
 
 # =========================
 # PAGE CONFIG
@@ -21,15 +20,15 @@ st.markdown("""
 .stApp {
     background: linear-gradient(
         135deg,
-        #f8d7ff,
-        #dbe8ff,
-        #ffe3f1
+        #f6d6ff,
+        #d8e7ff,
+        #ffe3f3
     );
 }
 
 /* TITLE */
 h1, h2, h3 {
-    color: #ff5f9e !important;
+    color: #ff5fa2 !important;
     font-weight: bold;
 }
 
@@ -42,8 +41,8 @@ p, label, div {
 section[data-testid="stSidebar"] {
     background: linear-gradient(
         180deg,
-        #f7c8e9,
-        #cde4ff
+        #f8cce8,
+        #cfe5ff
     );
 }
 
@@ -56,8 +55,8 @@ section[data-testid="stSidebar"] {
     font-weight: bold;
     background: linear-gradient(
         90deg,
-        #ff8eb5,
-        #8fc7ff
+        #ff90b3,
+        #8fc8ff
     );
     color: white;
     transition: 0.3s;
@@ -68,8 +67,8 @@ section[data-testid="stSidebar"] {
     transform: scale(1.03);
     background: linear-gradient(
         90deg,
-        #ff75a6,
-        #73b8ff
+        #ff74a3,
+        #6db7ff
     );
 }
 
@@ -87,16 +86,15 @@ div[data-testid="stMetric"] {
     backdrop-filter: blur(10px);
 }
 
-/* DATAFRAME */
-div[data-testid="stDataFrame"] {
-    background: rgba(255,255,255,0.35);
-    border-radius: 15px;
-    padding: 10px;
-}
-
 /* ALERT */
 .stAlert {
     border-radius: 15px;
+}
+
+/* TABLE */
+table {
+    background-color: rgba(255,255,255,0.45);
+    border-radius: 10px;
 }
 
 /* CONTAINER */
@@ -111,11 +109,23 @@ div[data-testid="stDataFrame"] {
 # CLASS NODE
 # =========================
 class Node:
-    def __init__(self, nama, kode, stok, tanggal_masuk):
+    def __init__(
+        self,
+        nama,
+        kode,
+        stok,
+        harga_beli,
+        harga_jual,
+        tanggal_masuk
+    ):
+
         self.nama = nama
         self.kode = kode
         self.stok = stok
+        self.harga_beli = harga_beli
+        self.harga_jual = harga_jual
         self.tanggal_masuk = tanggal_masuk
+
         self.prev = None
         self.next = None
 
@@ -127,11 +137,20 @@ class DoublyLinkedList:
         self.head = None
 
     # TAMBAH BARANG
-    def tambah_barang(self, nama, kode, stok, tanggal):
+    def tambah_barang(
+        self,
+        nama,
+        kode,
+        stok,
+        harga_beli,
+        harga_jual,
+        tanggal
+    ):
 
         current = self.head
 
         while current:
+
             if current.nama.lower() == nama.lower():
                 return False
 
@@ -141,6 +160,8 @@ class DoublyLinkedList:
             nama,
             kode,
             stok,
+            harga_beli,
+            harga_jual,
             tanggal
         )
 
@@ -257,6 +278,8 @@ class DoublyLinkedList:
                 "Nama Barang": current.nama,
                 "Kode Barang": current.kode,
                 "Stok": current.stok,
+                "Harga Beli": f"Rp {current.harga_beli:,}",
+                "Harga Jual": f"Rp {current.harga_jual:,}",
                 "Tanggal Masuk": current.tanggal_masuk
             })
 
@@ -287,13 +310,18 @@ class DoublyLinkedList:
 if "gudang" not in st.session_state:
     st.session_state.gudang = DoublyLinkedList()
 
+if "laporan_masuk" not in st.session_state:
+    st.session_state.laporan_masuk = []
+
+if "laporan_keluar" not in st.session_state:
+    st.session_state.laporan_keluar = []
+
 gudang = st.session_state.gudang
 
 # =========================
 # TITLE
 # =========================
 st.title("📦 Sistem Manajemen Gudang")
-st.caption("Manajemen stok barang menggunakan Doubly Linked List")
 
 # =========================
 # SIDEBAR MENU
@@ -307,7 +335,7 @@ menu = st.sidebar.selectbox(
         "🔍 Cari Barang",
         "✏️ Update Stok",
         "📦 Semua Barang",
-        "📊 Statistik Gudang"
+        "📊 Statistik & Laporan"
     ]
 )
 
@@ -325,9 +353,20 @@ if menu == "➕ Tambah Barang":
         kode = st.text_input("🏷️ Kode Barang")
 
     with col2:
+
         stok = st.number_input(
             "📦 Jumlah Stok",
             min_value=1
+        )
+
+        harga_beli = st.number_input(
+            "💰 Harga Beli",
+            min_value=0
+        )
+
+        harga_jual = st.number_input(
+            "💸 Harga Jual",
+            min_value=0
         )
 
         tanggal = st.date_input(
@@ -346,6 +385,8 @@ if menu == "➕ Tambah Barang":
                 nama,
                 kode,
                 stok,
+                harga_beli,
+                harga_jual,
                 tanggal.strftime("%d-%m-%Y")
             )
 
@@ -372,6 +413,13 @@ elif menu == "📥 Barang Masuk":
     if st.button("📥 Tambah Stok"):
 
         if gudang.barang_masuk(nama, jumlah):
+
+            st.session_state.laporan_masuk.append({
+                "Nama Barang": nama,
+                "Jumlah": jumlah,
+                "Tanggal": date.today().strftime("%d-%m-%Y")
+            })
+
             st.success("✅ Stok berhasil ditambahkan!")
 
         else:
@@ -404,6 +452,12 @@ elif menu == "📤 Barang Keluar":
         )
 
         if hasil == "berhasil":
+
+            st.session_state.laporan_keluar.append({
+                "Nama Barang": nama,
+                "Jumlah": jumlah,
+                "Tanggal": tanggal_keluar.strftime("%d-%m-%Y")
+            })
 
             st.success("✅ Barang berhasil dikeluarkan!")
 
@@ -441,6 +495,8 @@ elif menu == "🔍 Cari Barang":
             st.write("📦 Nama Barang :", barang.nama)
             st.write("🏷️ Kode Barang :", barang.kode)
             st.write("📊 Stok Barang :", barang.stok)
+            st.write("💰 Harga Beli :", barang.harga_beli)
+            st.write("💸 Harga Jual :", barang.harga_jual)
             st.write("📅 Tanggal Masuk :", barang.tanggal_masuk)
 
         else:
@@ -478,13 +534,7 @@ elif menu == "📦 Semua Barang":
     data = gudang.tampil_barang()
 
     if data:
-
-        df = pd.DataFrame(data)
-
-        st.dataframe(
-            df,
-            use_container_width=True
-        )
+        st.table(data)
 
     else:
         st.info("📭 Belum ada data barang.")
@@ -492,9 +542,9 @@ elif menu == "📦 Semua Barang":
 # =========================
 # STATISTIK
 # =========================
-elif menu == "📊 Statistik Gudang":
+elif menu == "📊 Statistik & Laporan":
 
-    st.header("📊 Statistik Gudang")
+    st.header("📊 Statistik & Laporan")
 
     jenis, total = gudang.jumlah_barang()
 
@@ -514,9 +564,31 @@ elif menu == "📊 Statistik Gudang":
 
     st.divider()
 
+    st.subheader("📥 Laporan Barang Masuk")
+
+    if st.session_state.laporan_masuk:
+        st.table(st.session_state.laporan_masuk)
+
+    else:
+        st.info("📭 Belum ada laporan barang masuk.")
+
+    st.divider()
+
+    st.subheader("📤 Laporan Barang Keluar")
+
+    if st.session_state.laporan_keluar:
+        st.table(st.session_state.laporan_keluar)
+
+    else:
+        st.info("📭 Belum ada laporan barang keluar.")
+
+    st.divider()
+
     if st.button("🔄 Reset Sistem"):
 
         st.session_state.gudang = DoublyLinkedList()
+        st.session_state.laporan_masuk = []
+        st.session_state.laporan_keluar = []
 
         st.success("✅ Sistem berhasil direset!")
 

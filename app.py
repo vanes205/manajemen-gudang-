@@ -162,12 +162,15 @@ class DoublyLinkedList:
         return None
 
     # BARANG MASUK
-    def barang_masuk(self, nama, jumlah):
+    def barang_masuk(self, nama, jumlah, tanggal):
 
         barang = self.cari_barang(nama)
 
         if barang:
+
             barang.stok += jumlah
+            barang.tanggal_masuk = tanggal
+
             return True
 
         return False
@@ -228,6 +231,7 @@ class DoublyLinkedList:
         barang = self.cari_barang(nama)
 
         if barang:
+
             barang.stok = stok_baru
             return True
 
@@ -286,8 +290,11 @@ if "laporan_keluar" not in st.session_state:
 
 gudang = st.session_state.gudang
 
+# =========================
 # TITLE
+# =========================
 st.title("📦 Sistem Manajemen Gudang")
+st.caption("Menggunakan Doubly Linked List")
 
 # =========================
 # MENU
@@ -313,12 +320,8 @@ if menu == "➕ Tambah Barang":
     st.header("➕ Tambah Barang")
 
     nama = st.text_input("📝 Nama Barang")
-    kode = st.text_input("🏷️ Kode Barang")
 
-    stok = st.number_input(
-        "📦 Jumlah Stok",
-        min_value=1
-    )
+    kode = st.text_input("🏷️ Kode Barang")
 
     harga_beli = st.text_input(
         "💰 Harga Beli"
@@ -326,11 +329,6 @@ if menu == "➕ Tambah Barang":
 
     harga_jual = st.text_input(
         "💸 Harga Jual"
-    )
-
-    tanggal = st.date_input(
-        "📅 Tanggal Masuk",
-        value=date.today()
     )
 
     if st.button("➕ Tambah Barang"):
@@ -356,10 +354,10 @@ if menu == "➕ Tambah Barang":
             hasil = gudang.tambah_barang(
                 nama,
                 kode,
-                stok,
+                0,
                 int(harga_beli),
                 int(harga_jual),
-                tanggal.strftime("%d-%m-%Y")
+                "-"
             )
 
             if hasil:
@@ -378,21 +376,32 @@ elif menu == "📥 Barang Masuk":
     nama = st.text_input("📝 Nama Barang")
 
     jumlah = st.number_input(
-        "📦 Jumlah Tambahan",
+        "📦 Jumlah Barang Masuk",
         min_value=1
+    )
+
+    tanggal_masuk = st.date_input(
+        "📅 Tanggal Barang Masuk",
+        value=date.today()
     )
 
     if st.button("📥 Tambah Stok"):
 
-        if gudang.barang_masuk(nama, jumlah):
+        hasil = gudang.barang_masuk(
+            nama,
+            jumlah,
+            tanggal_masuk.strftime("%d-%m-%Y")
+        )
+
+        if hasil:
 
             st.session_state.laporan_masuk.append({
                 "Nama Barang": nama,
                 "Jumlah": jumlah,
-                "Tanggal": date.today().strftime("%d-%m-%Y")
+                "Tanggal": tanggal_masuk.strftime("%d-%m-%Y")
             })
 
-            st.success("✅ Stok berhasil ditambahkan!")
+            st.success("✅ Barang masuk berhasil ditambahkan!")
 
         else:
             st.error("❌ Barang tidak ditemukan!")
@@ -407,12 +416,12 @@ elif menu == "📤 Barang Keluar":
     nama = st.text_input("📝 Nama Barang")
 
     jumlah = st.number_input(
-        "📦 Jumlah Keluar",
+        "📦 Jumlah Barang Keluar",
         min_value=1
     )
 
     tanggal_keluar = st.date_input(
-        "📅 Tanggal Keluar",
+        "📅 Tanggal Barang Keluar",
         value=date.today()
     )
 
@@ -434,6 +443,13 @@ elif menu == "📤 Barang Keluar":
             st.success("✅ Barang berhasil dikeluarkan!")
 
         elif hasil == "habis":
+
+            st.session_state.laporan_keluar.append({
+                "Nama Barang": nama,
+                "Jumlah": jumlah,
+                "Tanggal": tanggal_keluar.strftime("%d-%m-%Y")
+            })
+
             st.warning("⚠️ Stok habis! Barang dihapus.")
 
         elif hasil == "stok_kurang":
@@ -486,6 +502,7 @@ elif menu == "✏️ Update Stok":
     if st.button("✏️ Update"):
 
         if gudang.update_stok(nama, stok_baru):
+
             st.success("✅ Stok berhasil diupdate!")
 
         else:
@@ -511,7 +528,7 @@ elif menu == "📦 Semua Barang":
 # =========================
 elif menu == "📊 Statistik & Laporan":
 
-    st.header("📊 Statistik Gudang")
+    st.header("📊 Statistik & Laporan")
 
     jenis, total = gudang.jumlah_barang()
 
@@ -551,12 +568,23 @@ elif menu == "📊 Statistik & Laporan":
 
     st.divider()
 
+    st.warning("⚠️ Reset akan menghapus seluruh data gudang!")
+
+    verifikasi = st.text_input(
+        "Ketik 'RESET' untuk konfirmasi"
+    )
+
     if st.button("🔄 Reset Sistem"):
 
-        st.session_state.gudang = DoublyLinkedList()
-        st.session_state.laporan_masuk = []
-        st.session_state.laporan_keluar = []
+        if verifikasi == "RESET":
 
-        st.success("✅ Sistem berhasil direset!")
+            st.session_state.gudang = DoublyLinkedList()
+            st.session_state.laporan_masuk = []
+            st.session_state.laporan_keluar = []
 
-        st.rerun()
+            st.success("✅ Sistem berhasil direset!")
+
+            st.rerun()
+
+        else:
+            st.error("❌ Verifikasi salah! Ketik RESET.")

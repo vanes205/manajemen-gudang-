@@ -1,18 +1,14 @@
 import streamlit as st
 from datetime import date
 
-# =========================
-# PAGE CONFIG
-# =========================
+# PAGE TITLE
 st.set_page_config(
     page_title="Sistem Manajemen Gudang",
     page_icon="📦",
     layout="wide"
 )
 
-# =========================
-# CUSTOM CSS
-# =========================
+# CUSTOM WARNA
 st.markdown("""
 <style>
 
@@ -66,9 +62,7 @@ div[data-testid="stMetric"] {
 </style>
 """, unsafe_allow_html=True)
 
-# =========================
 # CLASS NODE
-# =========================
 class Node:
 
     def __init__(
@@ -91,9 +85,7 @@ class Node:
         self.prev = None
         self.next = None
 
-# =========================
 # CLASS DLL
-# =========================
 class DoublyLinkedList:
 
     def __init__(self):
@@ -183,18 +175,6 @@ class DoublyLinkedList:
 
         return "tidak_ada"
 
-    # UPDATE STOK
-    def update_stok(self, nama, stok_baru):
-
-        barang = self.cari_barang(nama)
-
-        if barang:
-
-            barang.stok = stok_baru
-            return True
-
-        return False
-
     # TAMPILKAN BARANG
     def tampil_barang(self):
 
@@ -234,9 +214,7 @@ class DoublyLinkedList:
 
         return jumlah_jenis, total_stok
 
-# =========================
 # SESSION STATE
-# =========================
 if "gudang" not in st.session_state:
     st.session_state.gudang = DoublyLinkedList()
 
@@ -248,15 +226,11 @@ if "laporan_keluar" not in st.session_state:
 
 gudang = st.session_state.gudang
 
-# =========================
 # TITLE
-# =========================
 st.title("📦 Sistem Manajemen Gudang")
 st.caption("Menggunakan Doubly Linked List")
 
-# =========================
 # MENU
-# =========================
 menu = st.sidebar.selectbox(
     "📋 MENU",
     [
@@ -269,9 +243,7 @@ menu = st.sidebar.selectbox(
     ]
 )
 
-# =========================
 # TAMBAH BARANG
-# =========================
 if menu == "➕ Tambah Barang":
 
     st.header("➕ Tambah Barang")
@@ -302,9 +274,7 @@ if menu == "➕ Tambah Barang":
             else:
                 st.warning("⚠️ Barang sudah ada!")
 
-# =========================
 # BARANG MASUK
-# =========================
 elif menu == "📥 Barang Masuk":
 
     st.header("📥 Barang Masuk")
@@ -370,9 +340,7 @@ elif menu == "📥 Barang Masuk":
             else:
                 st.error("❌ Barang tidak ditemukan!")
 
-# =========================
 # BARANG KELUAR
-# =========================
 elif menu == "📤 Barang Keluar":
 
     st.header("📤 Barang Keluar")
@@ -422,9 +390,7 @@ elif menu == "📤 Barang Keluar":
         else:
             st.error("❌ Barang tidak ditemukan!")
 
-# =========================
 # CARI BARANG
-# =========================
 elif menu == "🔍 Cari Barang":
 
     st.header("🔍 Cari Barang")
@@ -448,10 +414,8 @@ elif menu == "🔍 Cari Barang":
 
         else:
             st.error("❌ Barang tidak ditemukan!")
-
-# =========================
+            
 # SEMUA BARANG
-# =========================
 elif menu == "📦 Semua Barang":
 
     st.header("📦 Semua Barang")
@@ -464,9 +428,7 @@ elif menu == "📦 Semua Barang":
     else:
         st.info("📭 Belum ada data barang.")
 
-# =========================
 # STATISTIK & LAPORAN
-# =========================
 elif menu == "📊 Statistik & Laporan":
 
     st.header("📊 Statistik & Laporan")

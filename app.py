@@ -91,32 +91,6 @@ class DoublyLinkedList:
     def __init__(self):
         self.head = None
 
-    # TAMBAH BARANG BARU (Digunakan sebagai pendaftaran Stok Awal)
-    def tambah_barang_baru(self, nama, kode, stok, harga_beli, harga_jual, tanggal):
-
-        current = self.head
-
-        # Validasi ganda: Pastikan nama atau kode belum ada di gudang
-        while current:
-            if current.nama.lower() == nama.lower() or current.kode.lower() == kode.lower():
-                return False
-            current = current.next
-
-        new_node = Node(nama, kode, stok, harga_beli, harga_jual, tanggal)
-
-        if self.head is None:
-            self.head = new_node
-            return True
-
-        current = self.head
-        while current.next:
-            current = current.next
-
-        current.next = new_node
-        new_node.prev = current
-
-        return True
-
     # CARI BARANG
     def cari_barang(self, nama):
 
@@ -129,15 +103,43 @@ class DoublyLinkedList:
 
         return None
 
-    # UPDATE BARANG (Mengubah stok dan harga barang yang sudah ada)
-    def update_barang(self, nama, stok_baru, harga_beli_baru, harga_jual_saat_ini, tanggal):
+    # FUNGSI 1: BARANG MASUK (Otomatis bikin baru atau nambah stok yang ada)
+    def proses_barang_masuk(self, nama, kode, jumlah, harga_beli, harga_jual, tanggal):
+        
+        barang = self.cari_barang(nama)
+        
+        # Skenario A: Kalau barang sudah terdaftar -> Stok otomatis DITAMBAH (Akumulasi)
+        if barang:
+            barang.stok += jumlah
+            barang.harga_beli = harga_beli
+            barang.harga_jual = harga_jual
+            barang.tanggal_masuk = tanggal
+            return "ditambah"
+            
+        # Skenario B: Kalau barang benar-benar baru -> Daftarkan jadi gerbong baru (Stok Awal)
+        new_node = Node(nama, kode, jumlah, harga_beli, harga_jual, tanggal)
+        
+        if self.head is None:
+            self.head = new_node
+            return "baru_dibuat"
+            
+        current = self.head
+        while current.next:
+            current = current.next
+            
+        current.next = new_node
+        new_node.prev = current
+        return "baru_dibuat"
+
+    # FUNGSI 2: KOREKSI DATA / UPDATE (Menimpa total data karena salah input)
+    def koreksi_total_data(self, nama, stok_koreksi, harga_beli_baru, harga_jual_baru, tanggal):
         
         barang = self.cari_barang(nama)
         
         if barang:
-            barang.stok = stok_baru
+            barang.stok = stok_koreksi # Pake = biasa buat menimpa nilai lama
             barang.harga_beli = harga_beli_baru
-            barang.harga_jual = harga_jual_saat_ini
+            barang.harga_jual = harga_jual_baru
             barang.tanggal_masuk = tanggal
             return True
             
@@ -175,7 +177,7 @@ class DoublyLinkedList:
                 "Stok": current.stok,
                 "Harga Beli": f"Rp {current.harga_beli:,}",
                 "Harga Jual": f"Rp {current.harga_jual:,}",
-                "Tanggal Update": current.tanggal_masuk
+                "Tanggal Masuk/Update": current.tanggal_masuk
             })
             current = current.next
 
@@ -211,12 +213,12 @@ gudang = st.session_state.gudang
 st.title("📦 Sistem Manajemen Gudang")
 st.caption("Menggunakan Doubly Linked List")
 
-# MENU (Tambah Barang Dihapus, diganti Menu Update)
+# MENU UTAMA
 menu = st.sidebar.selectbox(
     "📋 MENU",
     [
-        "📥 Barang Masuk (Stok Awal)",
-        "🔄 Update Data Barang",
+        "📥 Barang Masuk",
+        "🔄 Koreksi / Update Data",
         "📤 Barang Keluar",
         "🔍 Cari Barang",
         "📦 Semua Barang",
@@ -224,90 +226,101 @@ menu = st.sidebar.selectbox(
     ]
 )
 
-# 1. MENU BARANG MASUK (Mendaftarkan Barang + Stok Awal)
-if menu == "📥 Barang Masuk (Stok Awal)":
+# 1. MENU BARANG MASUK (Bisa Stok Awal & Bisa Nambah Stok Otomatis)
+if menu == "📥 Barang Masuk":
 
-    st.header("📥 Barang Masuk (Pendaftaran Stok Awal)")
-    st.caption("Gunakan menu ini untuk mendaftarkan produk baru yang belum pernah tercatat di gudang.")
+    st.header("📥 Barang Masuk")
+    st.caption("Input nama barang. Jika belum ada otomatis jadi stok awal, jika sudah ada otomatis menambah stok lama.")
 
-    nama = st.text_input("📝 Nama Barang Baru")
-    kode = st.text_input("🏷️ Kode Barang")
-    stok_awal = st.number_input("📦 Jumlah Stok Awal", min_value=1, step=1)
-    harga_beli = st.text_input("💰 Harga Beli Awal")
-    harga_jual = st.text_input("💸 Harga Jual Awal")
+    nama = st.text_input("📝 Nama Barang")
+    kode = st.text_input("🏷️ Kode Barang (Isi bebas jika barang sudah pernah didaftarkan)")
+    jumlah = st.number_input("📦 Jumlah Barang Masuk", min_value=1, step=1)
+    harga_beli = st.text_input("💰 Harga Beli")
+    harga_jual = st.text_input("💸 Harga Jual")
     tanggal_masuk = st.date_input("📅 Tanggal Masuk", value=date.today())
 
-    if st.button("📥 Daftarkan Barang & Stok"):
+    if st.button("📥 Proses Barang Masuk"):
 
-        if nama.strip() == "" or kode.strip() == "" or harga_beli.strip() == "" or harga_jual.strip() == "":
-            st.warning("⚠️ Semua input wajib diisi!")
+        if nama.strip() == "" or harga_beli.strip() == "" or harga_jual.strip() == "":
+            st.warning("⚠️ Kolom Nama dan Harga wajib diisi!")
         elif not harga_beli.isdigit() or not harga_jual.isdigit():
-            st.error("❌ Harga beli dan harga jual harus berupa angka murni!")
+            st.error("❌ Harga harus berupa angka murni!")
         else:
-            hasil = gudang.tambah_barang_baru(
+            # Eksekusi fungsi pintar barang masuk
+            hasil = gudang.proses_barang_masuk(
                 nama.strip(),
                 kode.strip(),
-                stok_awal,
+                jumlah,
                 int(harga_beli),
                 int(harga_jual),
                 tanggal_masuk.strftime("%d-%m-%Y")
             )
 
-            if hasil:
-                # Catat ke dalam laporan masuk sebagai stok awal
+            # Ambil data kondisi terbaru barang setelah diproses buat info notifikasi
+            barang_aktif = gudang.cari_barang(nama.strip())
+
+            if hasil == "baru_dibuat":
                 st.session_state.laporan_masuk.append({
                     "Nama Barang": nama.strip(),
-                    "Keterangan": "Stok Awal Baru",
-                    "Jumlah": stok_awal,
+                    "Keterangan": "Pendaftaran Stok Awal",
+                    "Jumlah": jumlah,
                     "Harga Beli": int(harga_beli),
                     "Harga Jual": int(harga_jual),
                     "Tanggal": tanggal_masuk.strftime("%d-%m-%Y")
                 })
-                st.success(f"✅ Produk '{nama}' dengan stok awal {stok_awal} berhasil didaftarkan!")
-            else:
-                st.error("❌ Gagal! Nama barang atau Kode barang sudah ada di gudang. Silakan gunakan menu 'Update Data Barang'.")
+                st.success(f"✅ Produk baru '{nama}' berhasil didaftarkan dengan Stok Awal: {jumlah} pcs.")
+                
+            elif hasil == "ditambah":
+                st.session_state.laporan_masuk.append({
+                    "Nama Barang": nama.strip(),
+                    "Keterangan": "Restock (Tambah Stok)",
+                    "Jumlah": jumlah,
+                    "Harga Beli": int(harga_beli),
+                    "Harga Jual": int(harga_jual),
+                    "Tanggal": tanggal_masuk.strftime("%d-%m-%Y")
+                })
+                st.success(f"📈 Stok '{nama}' berhasil ditambah {jumlah} pcs. Total stok gudang sekarang: {barang_aktif.stok} pcs.")
 
-# 2. MENU UPDATE BARANG (Mengubah Stok dan Harga barang yang sudah ada)
-elif menu == "🔄 Update Data Barang":
+# 2. MENU KOREKSI DATA (Khusus buat benerin kalau salah input total nilai)
+elif menu == "🔄 Koreksi / Update Data":
 
-    st.header("🔄 Update Data Barang")
-    st.caption("Gunakan menu ini untuk mengubah jumlah stok akhir maupun memperbarui harga barang.")
+    st.header("🔄 Koreksi / Update Data (Fitur Salah Input)")
+    st.caption("Gunakan menu ini KHUSUS jika ada salah input data. Nilai stok dan harga yang diisi di sini akan MENIMPA total data lama.")
 
-    nama = st.text_input("📝 Masukkan Nama Barang yang Ingin Diupdate")
-    stok_baru = st.number_input("📦 Ubah Total Stok Menjadi", min_value=0, step=1)
-    harga_beli_baru = st.text_input("💰 Update Harga Beli Baru")
-    harga_jual_baru = st.text_input("💸 Update Harga Jual Baru")
-    tanggal_update = st.date_input("📅 Tanggal Update", value=date.today())
+    nama = st.text_input("📝 Masukkan Nama Barang yang Salah Input")
+    stok_koreksi = st.number_input("📦 Tulis Total Stok yang Benar Seharusnya", min_value=0, step=1)
+    harga_beli_baru = st.text_input("💰 Tulis Harga Beli yang Benar")
+    harga_jual_baru = st.text_input("💸 Tulis Harga Jual yang Benar")
+    tanggal_koreksi = st.date_input("📅 Tanggal Koreksi", value=date.today())
 
-    if st.button("🔄 Perbarui Data Barang"):
+    if st.button("🔄 Jalankan Koreksi Data"):
 
         if nama.strip() == "" or harga_beli_baru.strip() == "" or harga_jual_baru.strip() == "":
-            st.warning("⚠️ Semua kolom harus diisi untuk proses update!")
+            st.warning("⚠️ Semua kolom harus diisi untuk mencocokkan data!")
         elif not harga_beli_baru.isdigit() or not harga_jual_baru.isdigit():
-            st.error("❌ Format harga harus berupa angka murni!")
+            st.error("❌ Format harga harus berupa angka!")
         else:
-            # Jalankan pencarian dan update data pada Linked List
-            hasil = gudang.update_barang(
+            hasil = gudang.koreksi_total_data(
                 nama.strip(),
-                stok_baru,
+                stok_koreksi,
                 int(harga_beli_baru),
                 int(harga_jual_baru),
-                tanggal_update.strftime("%d-%m-%Y")
+                tanggal_koreksi.strftime("%d-%m-%Y")
             )
 
             if hasil:
-                # Catat ke log laporan masuk sebagai aktivitas penyesuaian/update data
+                # Catat ke log masuk dengan keterangan Koreksi Salah Input
                 st.session_state.laporan_masuk.append({
                     "Nama Barang": nama.strip(),
-                    "Keterangan": "Update Data & Stok",
-                    "Jumlah": stok_baru,
+                    "Keterangan": "Koreksi Salah Input",
+                    "Jumlah": stok_koreksi,
                     "Harga Beli": int(harga_beli_baru),
                     "Harga Jual": int(harga_jual_baru),
-                    "Tanggal": tanggal_update.strftime("%d-%m-%Y")
+                    "Tanggal": tanggal_koreksi.strftime("%d-%m-%Y")
                 })
-                st.success(f"✅ Data produk '{nama}' berhasil diperbarui!")
+                st.success(f"🛠️ Data barang '{nama}' sukses dikoreksi! Total stok akhir sekarang fix diatur menjadi {stok_koreksi} pcs.")
             else:
-                st.error("❌ Barang tidak ditemukan! Pastikan nama yang diketik sesuai dengan yang ada di gudang.")
+                st.error("❌ Barang tidak ditemukan! Pastikan ketikan nama produk sudah sesuai.")
 
 # 3. MENU BARANG KELUAR
 elif menu == "📤 Barang Keluar":
@@ -382,12 +395,12 @@ elif menu == "📊 Statistik & Laporan":
     st.header("📊 Statistik & Laporan")
     jenis, total = gudang.jumlah_barang()
 
-    # Hitung total pengeluaran belanja modal gudang
+    # Hitung perputaran dana modal (Abaikan baris koreksi jika dirasa merancukan pembukuan asli)
     total_pengeluaran = 0
     for item in st.session_state.laporan_masuk:
-        total_pengeluaran += item["Jumlah"] * item["Harga Beli"]
+        if item["Keterangan"] != "Koreksi Salah Input":
+            total_pengeluaran += item["Jumlah"] * item["Harga Beli"]
 
-    # Hitung total pemasukan omzet
     total_pemasukan = 0
     for item in st.session_state.laporan_keluar:
         total_pemasukan += item["Jumlah"] * item["Harga Jual"]
@@ -400,28 +413,27 @@ elif menu == "📊 Statistik & Laporan":
 
     col3, col4 = st.columns(2)
     with col3:
-        st.metric("🟥 Pengeluaran Kulakan/Awal", f"Rp {total_pengeluaran:,}")
+        st.metric("🟥 Pengeluaran Belanja Modal", f"Rp {total_pengeluaran:,}")
     with col4:
         st.metric("🟩 Total Pemasukan Gudang", f"Rp {total_pemasukan:,}")
 
     st.divider()
 
-    st.subheader("📥 Laporan Log Masuk & Update")
+    st.subheader("📥 Laporan Log Masuk & Koreksi")
     if st.session_state.laporan_masuk:
         data_masuk_formatted = []
         for x in st.session_state.laporan_masuk:
             data_masuk_formatted.append({
                 "Nama Barang": x["Nama Barang"],
                 "Keterangan": x["Keterangan"],
-                "Jumlah": x["Jumlah"],
+                "Jumlah/Stok Akhir": x["Jumlah"],
                 "Harga Beli": f"Rp {x['Harga Beli']:,}",
                 "Harga Jual": f"Rp {x['Harga Jual']:,}",
-                "Subtotal Nilai": f"Rp {x['Jumlah'] * x['Harga Beli']:,}",
                 "Tanggal": x["Tanggal"]
             })
         st.table(data_masuk_formatted)
     else:
-        st.info("📭 Belum ada rekam data masuk.")
+        st.info("📭 Belum ada rekam data aktivitas masuk.")
 
     st.divider()
 
@@ -451,6 +463,6 @@ elif menu == "📊 Statistik & Laporan":
             st.session_state.laporan_masuk = []
             st.session_state.laporan_keluar = []
             st.success("✅ Sistem berhasil direset!")
-            st.rerun()
+            st.experimental_rerun()
         else:
             st.error("❌ Verifikasi salah! Ketik RESET.")

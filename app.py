@@ -188,8 +188,8 @@ class DoublyLinkedList:
                 "Nama Barang": current.nama,
                 "Kode Barang": current.kode,
                 "Stok": current.stok,
-                "Harga Beli": f"Rp {current.harga_beli}",
-                "Harga Jual": f"Rp {current.harga_jual}",
+                "Harga Beli": f"Rp {current.harga_beli:,}",
+                "Harga Jual": f"Rp {current.harga_jual:,}",
                 "Tanggal Masuk": current.tanggal_masuk
             })
 
@@ -327,11 +327,12 @@ elif menu == "📥 Barang Masuk":
 
             if hasil:
 
+                # MODIFIKASI: Disimpan sebagai int angka murni untuk kalkulasi statistik
                 st.session_state.laporan_masuk.append({
                     "Nama Barang": nama,
                     "Jumlah": jumlah,
-                    "Harga Beli": harga_beli,
-                    "Harga Jual": harga_jual,
+                    "Harga Beli": int(harga_beli),
+                    "Harga Jual": int(harga_jual),
                     "Tanggal": tanggal_masuk.strftime("%d-%m-%Y")
                 })
 
@@ -359,6 +360,10 @@ elif menu == "📤 Barang Keluar":
 
     if st.button("📤 Kurangi Stok"):
 
+        # MODIFIKASI: Cari info harga_jual barang saat ini sebelum stoknya dikurangi
+        barang_aktif = gudang.cari_barang(nama)
+        harga_jual_saat_ini = barang_aktif.harga_jual if barang_aktif else 0
+
         hasil = gudang.barang_keluar(
             nama,
             jumlah
@@ -366,9 +371,11 @@ elif menu == "📤 Barang Keluar":
 
         if hasil == "berhasil":
 
+            # MODIFIKASI: Menyimpan harga jual ke dalam laporan keluar
             st.session_state.laporan_keluar.append({
                 "Nama Barang": nama,
                 "Jumlah": jumlah,
+                "Harga Jual": harga_jual_saat_ini,
                 "Tanggal": tanggal_keluar.strftime("%d-%m-%Y")
             })
 
@@ -376,9 +383,11 @@ elif menu == "📤 Barang Keluar":
 
         elif hasil == "habis":
 
+            # MODIFIKASI: Menyimpan harga jual ke dalam laporan keluar saat stok pas habis
             st.session_state.laporan_keluar.append({
                 "Nama Barang": nama,
                 "Jumlah": jumlah,
+                "Harga Jual": harga_jual_saat_ini,
                 "Tanggal": tanggal_keluar.strftime("%d-%m-%Y")
             })
 
@@ -408,8 +417,8 @@ elif menu == "🔍 Cari Barang":
             st.write("📦 Nama Barang :", barang.nama)
             st.write("🏷️ Kode Barang :", barang.kode)
             st.write("📊 Stok :", barang.stok)
-            st.write("💰 Harga Beli :", barang.harga_beli)
-            st.write("💸 Harga Jual :", barang.harga_jual)
+            st.write("💰 Harga Beli :", f"Rp {barang.harga_beli:,}")
+            st.write("💸 Harga Jual :", f"Rp {barang.harga_jual:,}")
             st.write("📅 Tanggal Masuk :", barang.tanggal_masuk)
 
         else:
@@ -435,18 +444,40 @@ elif menu == "📊 Statistik & Laporan":
 
     jenis, total = gudang.jumlah_barang()
 
-    col1, col2 = st.columns(2)
+    # MODIFIKASI: Menghitung total pengeluaran (kulakan) dari history laporan masuk
+    total_pengeluaran = 0
+    for item in st.session_state.laporan_masuk:
+        total_pengeluaran += item["Jumlah"] * item["Harga Beli"]
 
+    # MODIFIKASI: Menghitung total pemasukan (omzet) dari history laporan keluar
+    total_pemasukan = 0
+    for item in st.session_state.laporan_keluar:
+        total_pemasukan += item["Jumlah"] * item["Harga Jual"]
+
+    # GRID METRIK UTAMA
+    col1, col2 = st.columns(2)
     with col1:
         st.metric(
             "📦 Jumlah Jenis Barang",
             jenis
         )
-
     with col2:
         st.metric(
             "📊 Total Seluruh Stok",
             total
+        )
+
+    # MODIFIKASI: Menambahkan Tampilan Metrik Perputaran Duit Kas
+    col3, col4 = st.columns(2)
+    with col3:
+        st.metric(
+            "🟥 Total Pengeluaran Gudang",
+            f"Rp {total_pengeluaran:,}"
+        )
+    with col4:
+        st.metric(
+            "🟩 Total Pemasukan Gudang",
+            f"Rp {total_pemasukan:,}"
         )
 
     st.divider()
@@ -454,7 +485,18 @@ elif menu == "📊 Statistik & Laporan":
     st.subheader("📥 Laporan Barang Masuk")
 
     if st.session_state.laporan_masuk:
-        st.table(st.session_state.laporan_masuk)
+        # Format visual tabel biar ada "Rp" dan tanda koma ribuan tanpa merusak data asli
+        data_masuk_formatted = []
+        for x in st.session_state.laporan_masuk:
+            data_masuk_formatted.append({
+                "Nama Barang": x["Nama Barang"],
+                "Jumlah": x["Jumlah"],
+                "Harga Beli": f"Rp {x['Harga Beli']:,}",
+                "Harga Jual": f"Rp {x['Harga Jual']:,}",
+                "Subtotal Beban": f"Rp {x['Jumlah'] * x['Harga Beli']:,}",
+                "Tanggal": x["Tanggal"]
+            })
+        st.table(data_masuk_formatted)
 
     else:
         st.info("📭 Belum ada laporan barang masuk.")
@@ -464,7 +506,17 @@ elif menu == "📊 Statistik & Laporan":
     st.subheader("📤 Laporan Barang Keluar")
 
     if st.session_state.laporan_keluar:
-        st.table(st.session_state.laporan_keluar)
+        # MODIFIKASI: Format visual tabel laporan keluar biar nampilin harga jual dan subtotal
+        data_keluar_formatted = []
+        for y in st.session_state.laporan_keluar:
+            data_keluar_formatted.append({
+                "Nama Barang": y["Nama Barang"],
+                "Jumlah": y["Jumlah"],
+                "Harga Jual": f"Rp {y['Harga Jual']:,}",
+                "Subtotal Pemasukan": f"Rp {y['Jumlah'] * y['Harga Jual']:,}",
+                "Tanggal": y["Tanggal"]
+            })
+        st.table(data_keluar_formatted)
 
     else:
         st.info("📭 Belum ada laporan barang keluar.")
